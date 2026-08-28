@@ -20,7 +20,7 @@ class User(Base, CreatedAtUpdatedAtMixin):
         primary_key=True
     )
 
-    name: Mapped[str | None] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String,
         nullable=True,
         default=None
@@ -73,12 +73,12 @@ class User(Base, CreatedAtUpdatedAtMixin):
         default=True
     )
 
-    payments: Mapped[list['Payment']] = relationship(back_populates='user')
-    subscriptions: Mapped[list['Subscription']] = relationship(back_populates='user')
+    payments: Mapped[list["Payment"]] = relationship('Payment', back_populates='user')
+    subscriptions: Mapped[list["Subscription"]] = relationship('Subscription', back_populates='user')
 
     def __repr__(self):
         return (
             f"User(id={self.id}, name={self.name}, email={self.email}, "
-            f"trail_start={self.trail_start}, is_premium={self.is_premium}, is_active={self.is_active}, "
+            f"trial_start={self.trial_start}, is_premium={self.is_premium}, is_active={self.is_active}, "
             f"premium_expires={self.premium_expires})"
         )

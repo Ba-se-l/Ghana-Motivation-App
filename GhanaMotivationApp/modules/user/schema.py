@@ -1,6 +1,7 @@
 from pydantic import BaseModel as Base
 from pydantic import Field
 from pydantic import ConfigDict
+from pydantic import field_serializer
 
 from datetime import datetime
 
@@ -11,10 +12,9 @@ class _C(Base):
 
 class CreateUserRequest(Base):
     """POST /users/register request body."""
-    name: str | None = Field(
+    name: str = Field(
         min_length=5,
         max_length=20,
-        default=None
     )
 
     email: str = Field(
@@ -54,8 +54,22 @@ class UserResponse(_C):
     trial_end: datetime
     is_premium: bool
     premium_expires: datetime | None
+    is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer(
+        'trial_start',
+        'trial_end',
+        'premium_expires',
+        'created_at',
+        'updated_at'
+    )
+    @classmethod
+    def serialize_datetime(cls, v: datetime | None) -> int | None:
+        if v is None:
+            return None
+        return int(v.timestamp() * 1000)
 
 class UserStatusResponse(Base):
     """GET /users/status — full status payload."""

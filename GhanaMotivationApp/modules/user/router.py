@@ -10,7 +10,7 @@ from GhanaMotivationApp.settings import settings
 from GhanaMotivationApp.database import get_session
 from GhanaMotivationApp.modules.auth.dependencies import get_current_user
 from .model import User
-from .schema import UserResponse, ChangePasswordRequest
+from .schema import UserResponse, ChangePasswordRequest, UserStatusResponse
 from . import service
 
 router = APIRouter(prefix=f"{settings.API_PREFIX}/users", tags=["Users"])
@@ -27,6 +27,24 @@ async def get_me(
 ) -> UserResponse:
     """Returns the profile of the currently authenticated user."""
     return UserResponse.model_validate(current_user)
+
+
+@router.get(
+    '/status',
+    response_model=UserStatusResponse,
+    status_code=status.HTTP_200_OK,
+    summary='Get user subscription status.'
+)
+async def get_status(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+) -> UserStatusResponse:
+    """Returns trial/premium status with computed dynamic fields."""
+
+    return await service.get_user_status(
+        user_id=current_user.id,
+        session=session
+    )
 
 
 @router.patch(
@@ -47,3 +65,5 @@ async def change_password(
         session=session,
     )
     return UserResponse.model_validate(user)
+
+

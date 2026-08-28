@@ -42,5 +42,5 @@ class Payment(Base, CreatedAtUpdatedAtMixin):
         ForeignKey('users.id')
     )
 
-    user: Mapped['User'] = relationship(back_populates='payments')
+    user: Mapped["User"] = relationship('User', back_populates='payments', foreign_keys=[user_id])
     
