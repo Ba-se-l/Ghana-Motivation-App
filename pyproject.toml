@@ -16,4 +16,5 @@ dependencies = [
     "uvicorn>=0.52.4",
     "pyjwt>=2.13.0",
     "bcrypt>=5.0.0",
+    "python-multipart>=0.0.32",
 ]

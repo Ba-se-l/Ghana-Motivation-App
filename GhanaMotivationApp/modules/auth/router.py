@@ -7,6 +7,7 @@ domain services.
 """
 
 from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from GhanaMotivationApp.settings import settings
@@ -36,19 +37,43 @@ async def register(
     return UserResponse.model_validate(user)
 
 
-@router.post(
-    "/login",
-    response_model=TokenResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Login and get token",
-    description="Authenticates user credentials and returns a JWT access token.",
-)
+
+# هي نقطة النهاية مشان نقدر نستخدم `OAuth` بال واجهة التفاعلية تبع اطار العمل 
+@router.post("/login")
 async def login(
-    request: LoginRequest,
-    session: AsyncSession = Depends(get_session),
-) -> TokenResponse:
-    """Authenticates a user and issues a JWT token."""
-    return await service.login_user(schema=request, session=session)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: AsyncSession = Depends(get_session)
+):
+    # 1. تحويل البيانات القادمة من Swagger إلى Mymodel/Schema الخاص بك
+    # Swagger يرسل البريد الإلكتروني في حقل اسمه username إجبارياً
+    login_request = LoginRequest(
+        email=form_data.username, 
+        password=form_data.password
+    )
+    
+    # 2. استدعاء دالة السيرفيس الخاصة بك بدون أي تغيير
+    token_response = await service.login_user(schema=login_request, session=session)
+    
+    # 3. إرجاع النتيجة بالشكل الذي يفهمه Swagger (يجب إضافة token_type)
+    return {
+        "access_token": token_response.access_token,
+        "token_type": "bearer"
+    }
+
+# هي هية نقطة النهاية النظامية مشان وقت التشغيل النظامي
+# @router.post(
+#     "/login",
+#     response_model=TokenResponse,
+#     status_code=status.HTTP_200_OK,
+#     summary="Login and get token",
+#     description="Authenticates user credentials and returns a JWT access token.",
+# )
+# async def login(
+#     request: LoginRequest,
+#     session: AsyncSession = Depends(get_session),
+# ) -> TokenResponse:
+#     """Authenticates a user and issues a JWT token."""
+#     return await service.login_user(schema=request, session=session)
 
 
 @router.post(
