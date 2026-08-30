@@ -23,13 +23,12 @@ async_engine = create_async_engine(
 
 
 async def create_all_tables():
-
-    from GhanaMotivationApp.modules.user import User
     from GhanaMotivationApp.modules.payment import Payment
-    from GhanaMotivationApp.modules.subscription import Subscription
     from GhanaMotivationApp.modules.quote import Quote
+    from GhanaMotivationApp.modules.subscription import Subscription
+    from GhanaMotivationApp.modules.user import User
 
-
+    
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     

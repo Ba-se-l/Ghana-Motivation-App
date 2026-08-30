@@ -17,7 +17,7 @@ class UserNotPremiumException(AppException):
     """Raised when a user is not premium"""
     def __init__(self, user_id: int):
         super().__init__(
-            message=f"User with iid '{user_id}' is not a premium subscriber.",
+            message=f"User with id '{user_id}' is not a premium subscriber.",
             error_code='USER_NOT_PREMIUM',
             status_code=403
         )

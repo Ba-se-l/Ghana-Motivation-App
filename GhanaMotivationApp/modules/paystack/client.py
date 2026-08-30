@@ -9,7 +9,9 @@ responses without making network calls.
 
 import uuid
 import httpx
+from datetime import datetime, timezone
 
+from GhanaMotivationApp.core import CurrencyEnum
 from GhanaMotivationApp.settings import settings
 from .schema import (
     PaystackInitRequest,
@@ -87,9 +89,9 @@ class PaystackClient:
                     status="success",
                     reference=reference,
                     amount=settings.SUBSCRIPTION_AMOUNT_PESEWAS,
-                    currency="GHS",
-                    paid_at="2026-08-28T00:00:00.000Z",
-                    customer={"email": "mock@example.com"},
+                    currency=CurrencyEnum.GHANA,
+                    paid_at=datetime.now(timezone.utc).isoformat(),
+                    customer={"email": "mock-verified@test.com"},
                 ),
             )
 

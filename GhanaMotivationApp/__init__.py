@@ -1,0 +1,1 @@
+"""Ghana Motivation Backend — Root Package."""

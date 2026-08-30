@@ -31,7 +31,7 @@ class PaystackVerifyResponseData(BaseModel):
     """'success', 'failed', 'abandoned'"""
     reference: str
     amount: int
-    currency: str
+    currency: CurrencyEnum
     paid_at: str | None = None
     customer: dict
 

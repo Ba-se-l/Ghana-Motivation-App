@@ -13,6 +13,7 @@ class _C(Base):
 class CreateUserRequest(Base):
     """POST /users/register request body."""
     name: str = Field(
+        ...,
         min_length=5,
         max_length=20,
     )

@@ -8,7 +8,6 @@ without implementing low-level data access itself.
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 from GhanaMotivationApp.core import (
     hash_password,
     verify_password,
@@ -69,9 +68,6 @@ async def register_user(schema: RegisterRequest, session: AsyncSession) -> User:
     await session.flush()
     
     return user
-
-
-
 
 
 async def login_user(schema: LoginRequest, session: AsyncSession) -> TokenResponse:

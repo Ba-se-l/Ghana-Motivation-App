@@ -36,8 +36,6 @@ async def register(
     
     return UserResponse.model_validate(user)
 
-
-
 # هي نقطة النهاية مشان نقدر نستخدم `OAuth` بال واجهة التفاعلية تبع اطار العمل 
 @router.post("/login")
 async def login(
@@ -55,10 +53,8 @@ async def login(
     token_response = await service.login_user(schema=login_request, session=session)
     
     # 3. إرجاع النتيجة بالشكل الذي يفهمه Swagger (يجب إضافة token_type)
-    return {
-        "access_token": token_response.access_token,
-        "token_type": "bearer"
-    }
+
+    return token_response.model_dump()
 
 # هي هية نقطة النهاية النظامية مشان وقت التشغيل النظامي
 # @router.post(
