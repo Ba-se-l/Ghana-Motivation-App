@@ -8,7 +8,8 @@ as it will cause topological circular imports.
 """
 
 from .enums import (
-    CurrencyEnum
+    CurrencyEnum,
+    PaymentStatusEnum
 )
 
 from .exceptions import (
@@ -31,6 +32,7 @@ __all__ = (
 
     # from enums.py
     'CurrencyEnum',
+    'PaymentStatusEnum',
 
     # from exceptions.py
     'AppException',

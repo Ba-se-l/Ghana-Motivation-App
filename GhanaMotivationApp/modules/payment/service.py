@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from GhanaMotivationApp.core import CurrencyEnum, PaymentStatusEnum
 from GhanaMotivationApp.settings import settings
 from GhanaMotivationApp.modules.paystack import PaystackClient, PaystackInitRequest
 from GhanaMotivationApp.modules.user import UserRepository, UserNotFoundException
@@ -104,8 +105,8 @@ async def initialize_payment(
     payment = Payment(
         reference=reference,
         amount=schema.amount,
-        currency="GHS",
-        status="pending",
+        currency=CurrencyEnum.GHANA,
+        status=PaymentStatusEnum.PENDING.value,
         user_id=schema.user_id,
     )
     await payment_repo.create(orm_model=payment)
@@ -139,11 +140,12 @@ async def verify_and_activate(reference: str, session: AsyncSession) -> Payment:
         PaymentVerificationFailedException: If Paystack reports non-success.
     """
     payment_repo = PaymentRepository(session=session)
+    user_repo = UserRepository(session=session)
     paystack_client = PaystackClient()
 
     # Step 1: Check for existing processed payment (idempotency)
     existing = await payment_repo.get_by_reference(reference)
-    if existing and existing.status == "success":
+    if existing and existing.status == PaymentStatusEnum.SUCCESS.value:
         raise DuplicatePaymentException(reference=reference)
 
     # Step 2: Verify with Paystack
@@ -156,28 +158,33 @@ async def verify_and_activate(reference: str, session: AsyncSession) -> Payment:
             orm_model=existing,
             update_data={
                 'status': paystack_status,
-                'paid_at': datetime.now(timezone.utc) if paystack_status == "success" else None,
+                'paid_at': datetime.now(timezone.utc) if paystack_status == PaymentStatusEnum.SUCCESS.value else None,
             },
         )
         payment = existing
     else:
+        customer_email = verify_response.data.customer.get('email', '')
+        user = await user_repo.get_by_email(email=customer_email)
+        if not user:
+            raise UserNotFoundException(identifier=customer_email)
+
         payment = Payment(
             reference=reference,
             amount=verify_response.data.amount,
             currency=verify_response.data.currency,
             status=paystack_status,
-            paid_at=datetime.now(timezone.utc) if paystack_status == "success" else None,
-            user_id=0,  # Will be resolved from Paystack customer email
+            paid_at=datetime.now(timezone.utc) if paystack_status == PaymentStatusEnum.SUCCESS.value else None,
+            user_id=user.id,  # Will be resolved from Paystack customer email
         )
         await payment_repo.create(orm_model=payment)
 
     # Step 4: If successful — activate premium
-    if paystack_status == "success" and existing:
+    if paystack_status == PaymentStatusEnum.SUCCESS.value:
         await _activate_premium_for_user(
-            user_id=existing.user_id, session=session
+            user_id=payment.user_id, session=session
         )
 
-    if paystack_status != "success":
+    if paystack_status != PaymentStatusEnum.SUCCESS.value:
         raise PaymentVerificationFailedException(
             reference=reference, paystack_status=paystack_status
         )

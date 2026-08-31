@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from .auth import router as auth_router
 from .user import router as user_router
 from .payment import router as payment_router
-from .quote.router import router as quote_router
+from .quote import router as quote_router
 
 api_router = APIRouter()
 

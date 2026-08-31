@@ -59,7 +59,7 @@ class Settings(Base):
     ALGORITHM: str = 'HS256'
     """Algorithm used for `JWT` encoding"""
 
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     """Access token expiry duration in minutes"""
     # ───────────────────────────────
 

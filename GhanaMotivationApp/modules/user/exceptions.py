@@ -26,7 +26,7 @@ class UserAlreadyPremiumException(AppException):
     """Raised when a user is already premium"""
     def __init__(self, user_id: int):
         super().__init__(
-            message=f"User with id '{user_id}' is already a premium subscripotion.",
+            message=f"User with id '{user_id}' is already a premium subscriber.",
             error_code='USER_ALREADY_PREMIUM',
             status_code=409
         )
