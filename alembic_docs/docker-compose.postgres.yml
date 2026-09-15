@@ -1,0 +1,41 @@
+# ==============================================================================
+# Production-Ready Local PostgreSQL 16 Container for Ghana Motivation Backend
+# ==============================================================================
+# Quick Launch:
+#   docker compose -f alembic_docs/docker-compose.postgres.yml up -d
+#
+# Quick Stop:
+#   docker compose -f alembic_docs/docker-compose.postgres.yml down
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ghana_motivation_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ghana_admin
+      POSTGRES_PASSWORD: ghana_secure_password_2026!
+      POSTGRES_DB: ghana_motivation_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - ghana_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghana_admin -d ghana_motivation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - ghana_backend_network
+
+volumes:
+  ghana_postgres_data:
+    driver: local
+
+networks:
+  ghana_backend_network:
+    driver: bridge

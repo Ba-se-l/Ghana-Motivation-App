@@ -5,14 +5,25 @@ no database access. It uses ``bcrypt`` with a ``sha256`` pre-hash to
 bypass bcrypt's 72-byte password limit, and ``PyJWT`` for stateless
 JSON Web Token operations.
 """
-
+import uuid
 import bcrypt
 import jwt
+from typing_extensions import TypedDict
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 
-from GhanaMotivationApp.settings import settings
 from .exceptions import InvalidCredentialsException
+from .enums import TokenTypeEnum
+
+
+
+
+class Payload(TypedDict):
+    sub: str
+    type: TokenTypeEnum
+    jti: str | None
+    iat: datetime
+    exp: datetime
 
 
 def _utf8(seq: str) -> bytes:
@@ -88,16 +99,60 @@ def create_access_token(user_id: int, expires_delta: timedelta | None = None) ->
     Returns:
         The encoded JWT string.
     """
+    from GhanaMotivationApp.settings import settings
+
     # Use settings default if no custom expiry provided
     if expires_delta is None:
         expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    payload = {
-        'sub': str(user_id),
-        'exp': datetime.now(timezone.utc) + expires_delta,
-    }
+    now = datetime.now(timezone.utc)
+
+    payload: dict[str, str | TokenTypeEnum | datetime] = Payload(
+        sub=str(user_id),
+        type=TokenTypeEnum.ACCESS,
+        iat=now,
+        exp=now + expires_delta
+    )
 
     return jwt.encode(payload=payload, key=settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def create_refresh_token(user_id: int, jti: str | None = None) -> tuple[str, str]:
+    """Creates a signed JWT refresh token with a unique JTI claim.
+
+    The JTI (JWT ID) is stored server-side in the ``refresh_sessions``
+    table to enable revocation and rotation.
+
+    Args:
+        user_id: The user's primary key integer.
+        jti: Optional pre-generated JTI. If None, a UUID4 hex is generated.
+
+    Returns:
+        A tuple of ``(encoded_jwt_string, jti_string)``.
+    """
+    from GhanaMotivationApp.settings import settings
+
+    if jti is None:
+        jti = uuid.uuid4().hex
+
+    now = datetime.now(timezone.utc)
+    expires_delta = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    payload: dict[str, str | TokenTypeEnum | datetime] = Payload(
+        sub=str(user_id),
+        type=TokenTypeEnum.REFRESH,
+        jti=jti,
+        iat=now,
+        exp=now + expires_delta
+    )
+
+    token = jwt.encode(
+        payload=payload,
+        key=settings.REFRESH_SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+
+    return token, jti
 
 
 def decode_access_token(token: str) -> dict:
@@ -117,6 +172,8 @@ def decode_access_token(token: str) -> dict:
         InvalidCredentialsException: If the token is expired, malformed,
             or missing the ``sub`` claim.
     """
+    from GhanaMotivationApp.settings import settings
+
     try:
         payload = jwt.decode(
             jwt=token,
@@ -125,6 +182,47 @@ def decode_access_token(token: str) -> dict:
         )
 
         if 'sub' not in payload:
+            raise InvalidCredentialsException()
+
+        # Reject refresh tokens presented as access tokens
+        if payload.get('type') != TokenTypeEnum.ACCESS:
+            raise InvalidCredentialsException()
+
+        return payload
+
+    except jwt.PyJWTError:
+        raise InvalidCredentialsException()
+
+
+def decode_refresh_token(token: str) -> dict:
+    """Decodes and validates a JWT refresh token.
+
+    Verifies signature, expiration, ``sub`` and ``jti`` claim presence,
+    and that the token type is ``refresh``.
+
+    Args:
+        token: The JWT refresh token string.
+
+    Returns:
+        The decoded payload dictionary containing ``sub``, ``jti``, ``type``.
+
+    Raises:
+        InvalidCredentialsException: If the token is expired, malformed,
+            or not of type ``refresh``.
+    """
+    from GhanaMotivationApp.settings import settings
+
+    try:
+        payload = jwt.decode(
+            jwt=token,
+            key=settings.REFRESH_SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+
+        if 'sub' not in payload or 'jti' not in payload:
+            raise InvalidCredentialsException()
+
+        if payload.get('type') != TokenTypeEnum.REFRESH:
             raise InvalidCredentialsException()
 
         return payload

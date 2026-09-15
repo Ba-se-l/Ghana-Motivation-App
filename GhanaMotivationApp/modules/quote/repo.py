@@ -19,5 +19,26 @@ class QuoteRepository(BaseRepository[Quote]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_by_day_range(self, start_day: int, end_day: int) -> list[Quote]:
+        """Retrieves all quotes within a day number range in a single query.
+
+        Args:
+            start_day: Range start (inclusive).
+            end_day: Range end (inclusive).
+
+        Returns:
+            List of Quote instances ordered by day_number.
+        """
+        stmt = (
+            select(self.model)
+            .where(
+                self.model.day_number >= start_day,
+                self.model.day_number <= end_day,
+            )
+            .order_by(self.model.day_number)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
 
     

@@ -30,7 +30,8 @@ async def create_all_tables() -> None:
     from GhanaMotivationApp.modules.quote import Quote             # noqa: F401
     from GhanaMotivationApp.modules.subscription import Subscription # noqa: F401
     from GhanaMotivationApp.modules.user import User               # noqa: F401
+    from GhanaMotivationApp.modules.auth import RefreshSession
 
     # Execute table creation synchronously within an async connection context
     async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -19,6 +19,20 @@ class RegisterRequest(BaseModel):
         max_length=200,
         examples=['DEVICE_ID']
     )
+    """Client-provided device identifier for metadata tracking."""
+
+    @field_validator('email', mode='before')
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        """Normalizes email to lowercase and strips whitespace.
+
+        Args:
+            v: The raw email string from the request.
+
+        Returns:
+            Lowercase, stripped email string.
+        """
+        return v.strip().lower()
 
 
 class LoginRequest(BaseModel):
@@ -30,12 +44,35 @@ class LoginRequest(BaseModel):
     password: str = Field(...)
     """The user's plain-text password for verification."""
 
+    @field_validator('email', mode='before')
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        """Normalizes email to lowercase and strips whitespace.
+
+        Args:
+            v: The raw email string from the request.
+
+        Returns:
+            Lowercase, stripped email string.
+        """
+        return v.strip().lower()
+
 
 class TokenResponse(BaseModel):
-    """Schema for JWT token API responses."""
+    """Schema for JWT dual-token API responses."""
 
     access_token: str
-    """The JWT access token string."""
+    """The short-lived JWT access token string."""
+
+    refresh_token: str
+    """The long-lived JWT refresh token string."""
 
     token_type: str = 'bearer'
     """The token type. Always ``bearer``."""
+
+
+class RefreshRequest(BaseModel):
+    """Schema for token refresh request."""
+
+    refresh_token: str = Field(...)
+    """The current valid refresh token to exchange for new tokens."""

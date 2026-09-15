@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
-from sqlalchemy import Integer, Boolean, DateTime, ForeignKey
+from sqlalchemy import Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 
+from GhanaMotivationApp.core import SubscriptionStatusEnum
 from GhanaMotivationApp.database.base import Base
 from GhanaMotivationApp.database.mixin import CreatedAtUpdatedAtMixin
 
@@ -27,7 +28,12 @@ class Subscription(CreatedAtUpdatedAtMixin, Base):
         DateTime(timezone=True)
     )
 
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default=SubscriptionStatusEnum.ACTIVE.value,
+        nullable=False,
+    )
+    """Current lifecycle state: 'active', 'expired', or 'cancelled'."""
 
     # --- Relationships ---
     user: Mapped["User"] = relationship(back_populates="subscriptions")

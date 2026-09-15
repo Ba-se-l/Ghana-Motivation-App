@@ -1,3 +1,5 @@
+from .enums import CurrencyEnum
+
 class AppException(Exception):
     """Base exception class for all domain-specific application errors.
 
@@ -121,3 +123,82 @@ class InvalidCredentialsException(AppException):
             error_code="INVALID_CREDENTIALS",
             status_code=401,
         )
+
+
+class TokenRevokedException(AppException):
+    """Raised when a refresh token has been revoked or does not exist.
+
+    Produces HTTP ``401 Unauthorized``.
+    """
+
+    def __init__(self):
+        """Initializes the token-revoked exception."""
+        super().__init__(
+            message="Refresh token has been revoked or is invalid.",
+            error_code="TOKEN_REVOKED",
+            status_code=401,
+        )
+
+
+class PaymentAmountMismatchException(AppException):
+    """Raised when Paystack-verified amount does not match expected server price.
+
+    Produces HTTP ``400 Bad Request``.
+    """
+
+    def __init__(self, expected: int, actual: int, currency: str):
+        """Initializes the amount-mismatch exception.
+
+        Args:
+            expected: The server-configured subscription price in minor units.
+            actual: The amount reported by Paystack verification.
+            currency: The expected currency code.
+        """
+        super().__init__(
+            message=(
+                f"Payment amount mismatch. Expected {expected} {currency}, "
+                f"got {actual} {currency}."
+            ),
+            error_code="PAYMENT_AMOUNT_MISMATCH",
+            status_code=400,
+        )
+
+
+class PaymentCurrencyMismatchException(AppException):
+    """Raised when Paystack-verified currency does not match expected currency.
+
+    Produces HTTP ``400 Bad Request``.
+    """
+
+    def __init__(self, expected: str, actual: str):
+        """Initializes the currency-mismatch exception.
+
+        Args:
+            expected: The expected currency code (e.g., 'GHS').
+            actual: The currency code returned by Paystack.
+        """
+        super().__init__(
+            message=f"Payment currency mismatch. Expected '{expected}', got '{actual}'.",
+            error_code="PAYMENT_CURRENCY_MISMATCH",
+            status_code=400,
+        )
+
+
+class PaymentOwnershipException(AppException):
+    """Raised when a payment reference does not belong to the requesting user.
+
+    Produces HTTP ``403 Forbidden``.
+    """
+
+    def __init__(self, reference: str):
+        """Initializes the payment-ownership exception.
+
+        Args:
+            reference: The Paystack transaction reference.
+        """
+        super().__init__(
+            message=f"Payment '{reference}' does not belong to the current user.",
+            error_code="PAYMENT_OWNERSHIP_DENIED",
+            status_code=403,
+        )
+

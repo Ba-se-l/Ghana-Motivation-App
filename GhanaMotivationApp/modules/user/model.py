@@ -10,6 +10,7 @@ from GhanaMotivationApp.database import CreatedAtUpdatedAtMixin
 if TYPE_CHECKING:
     from GhanaMotivationApp.modules.payment import Payment
     from GhanaMotivationApp.modules.subscription import Subscription
+    from GhanaMotivationApp.modules.auth.model import RefreshSession
 
 
 class User(Base, CreatedAtUpdatedAtMixin):
@@ -75,6 +76,9 @@ class User(Base, CreatedAtUpdatedAtMixin):
 
     payments: Mapped[list["Payment"]] = relationship('Payment', back_populates='user')
     subscriptions: Mapped[list["Subscription"]] = relationship('Subscription', back_populates='user')
+    refresh_sessions: Mapped[list["RefreshSession"]] = relationship(
+    "RefreshSession", back_populates="user"
+    )
 
     def __repr__(self):
         return (

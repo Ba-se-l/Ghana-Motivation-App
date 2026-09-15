@@ -18,3 +18,8 @@ dependencies = [
     "bcrypt>=5.0.0",
     "python-multipart>=0.0.32",
 ]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+

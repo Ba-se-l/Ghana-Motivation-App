@@ -16,19 +16,6 @@ class _C(Base):
     model_config = ConfigDict(from_attributes=True)
 
 
-class InitSubscriptionRequest(Base):
-    """Request payload for initializing a new subscription payment."""
-
-    user_id: int = Field(...)
-    """Unique integer identifier of the paying user."""
-
-    email: str = Field(..., min_length=5, max_length=100, pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
-    """Email address associated with the Paystack transaction."""
-
-    amount: int = Field(..., gt=0, description="Amount in pesewas (minor units: 1000 = 10 GHS)")
-    """Total payment amount specified in Ghanaian Pesewas."""
-
-
 class PaymentInitResponse(Base):
     """Response payload containing Paystack checkout authorization details."""
 

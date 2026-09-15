@@ -26,8 +26,8 @@ async def get_today_quote(session: AsyncSession) -> Quote:
     """
     quote_repo = QuoteRepository(session=session)
 
-    # Compute current day of year (integer between 1 and 366)
-    day_number = datetime.now(timezone.utc).timetuple().tm_yday
+    # Clamp day 366 (leap year) to 365 to prevent missing-quote errors
+    day_number = min(datetime.now(timezone.utc).timetuple().tm_yday, 365)
 
     quote = await quote_repo.get_by_day_number(day_number=day_number)
     if quote is None:
@@ -62,7 +62,7 @@ async def get_batch_quotes(
     end_day: int,
     session: AsyncSession,
 ) -> list[Quote]:
-    """Retrieves a sequential batch range of quotes for client offline caching.
+    """Retrieves a sequential batch range of quotes using a single range query.
 
     Args:
         start_day: Starting day of year (1-365).
@@ -70,17 +70,9 @@ async def get_batch_quotes(
         session: The active asynchronous database session.
 
     Returns:
-        A list of `Quote` model instances found within the specified day range.
+        A list of Quote model instances found within the specified day range.
     """
     quote_repo = QuoteRepository(session=session)
-    quotes: list[Quote] = []
-
-    # Iteratively fetch quotes for each day in range
-    for day in range(start_day, end_day + 1):
-        quote = await quote_repo.get_by_day_number(day_number=day)
-        if quote is not None:
-            quotes.append(quote)
-
-    return quotes
+    return await quote_repo.get_by_day_range(start_day=start_day, end_day=end_day)
 
 

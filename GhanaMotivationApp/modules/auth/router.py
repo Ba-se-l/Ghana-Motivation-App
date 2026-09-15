@@ -7,14 +7,13 @@ domain services.
 """
 
 from fastapi import APIRouter, Depends, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from GhanaMotivationApp.settings import settings
 from GhanaMotivationApp.database import get_session
 from GhanaMotivationApp.modules.user import User, UserResponse
 from .dependencies import get_current_user
-from .schemas import RegisterRequest, LoginRequest, TokenResponse
+from .schemas import RegisterRequest, LoginRequest, TokenResponse, RefreshRequest
 from . import service
 
 router = APIRouter(prefix=f"{settings.API_PREFIX}/auth", tags=["Authentication"])
@@ -36,54 +35,63 @@ async def register(
     
     return UserResponse.model_validate(user)
 
-# هي نقطة النهاية مشان نقدر نستخدم `OAuth` بال واجهة التفاعلية تبع اطار العمل 
-@router.post("/login")
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Login and get token pair",
+    description="Authenticates user credentials and returns JWT access + refresh tokens.",
+)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    session: AsyncSession = Depends(get_session)
-):
-    # 1. تحويل البيانات القادمة من Swagger إلى Mymodel/Schema الخاص بك
-    # Swagger يرسل البريد الإلكتروني في حقل اسمه username إجبارياً
-    login_request = LoginRequest(
-        email=form_data.username, 
-        password=form_data.password
-    )
-    
-    # 2. استدعاء دالة السيرفيس الخاصة بك بدون أي تغيير
-    token_response = await service.login_user(schema=login_request, session=session)
-    
-    # 3. إرجاع النتيجة بالشكل الذي يفهمه Swagger (يجب إضافة token_type)
-
-    return token_response.model_dump()
-
-# هي هية نقطة النهاية النظامية مشان وقت التشغيل النظامي
-# @router.post(
-#     "/login",
-#     response_model=TokenResponse,
-#     status_code=status.HTTP_200_OK,
-#     summary="Login and get token",
-#     description="Authenticates user credentials and returns a JWT access token.",
-# )
-# async def login(
-#     request: LoginRequest,
-#     session: AsyncSession = Depends(get_session),
-# ) -> TokenResponse:
-#     """Authenticates a user and issues a JWT token."""
-#     return await service.login_user(schema=request, session=session)
+    request: LoginRequest,
+    session: AsyncSession = Depends(get_session),
+) -> TokenResponse:
+    """Authenticates a user and issues a dual-token pair."""
+    return await service.login_user(schema=request, session=session)
 
 
 @router.post(
     "/refresh",
     response_model=TokenResponse,
     status_code=status.HTTP_200_OK,
-    summary="Refresh access token",
+    summary="Refresh token pair",
     description=(
-        "Issues a new JWT access token with a fresh expiration time. "
-        "Requires a currently valid Bearer token in the Authorization header."
+        "Exchanges a valid refresh token for a new access + refresh token pair. "
+        "The old refresh token is revoked (rotation)."
     ),
 )
 async def refresh(
-    current_user: User = Depends(get_current_user),
+    request: RefreshRequest,
+    session: AsyncSession = Depends(get_session),
 ) -> TokenResponse:
-    """Refreshes the current authenticated session."""
-    return await service.refresh_token(current_user=current_user)
+    """Rotates refresh token and issues a fresh token pair."""
+    return await service.refresh_token(schema=request, session=session)
+
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_200_OK,
+    summary="Logout current device",
+)
+async def logout_endpoint(
+    request: RefreshRequest,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Revokes the provided refresh token (single device logout)."""
+    await service.logout(refresh_token_str=request.refresh_token, session=session)
+    return {"message": "Logged out successfully."}
+
+
+@router.post(
+    "/logout-all",
+    status_code=status.HTTP_200_OK,
+    summary="Logout all devices",
+)
+async def logout_all_endpoint(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Revokes all refresh sessions for the current user."""
+    await service.logout_all(user_id=current_user.id, session=session)
+    return {"message": "All sessions revoked successfully."}

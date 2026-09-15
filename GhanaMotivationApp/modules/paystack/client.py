@@ -34,6 +34,7 @@ class PaystackClient:
         self.base_url = settings.PAYSTACK_BASE_URL
         self.secret_key = settings.PAYSTACK_SECRET_KEY
         self.is_mock = settings.PAYSTACK_MODE == 'mock'
+        self._timeout = httpx.Timeout(connect=5.0, read=15.0, write=5.0, pool=10.0)
 
     def _headers(self) -> dict[str, str]:
         """Builds default HTTP authorization and header metadata.
@@ -74,7 +75,7 @@ class PaystackClient:
             )
 
         # Live mode — real HTTP request to Paystack REST API
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
             response = await client.post(
                 f"{self.base_url}/transaction/initialize",
                 headers=self._headers(),
@@ -114,7 +115,7 @@ class PaystackClient:
             )
 
         # Live mode — real HTTP request to Paystack verification endpoint
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=self._timeout) as client:
             response = await client.get(
                 f"{self.base_url}/transaction/verify/{reference}",
                 headers=self._headers(),

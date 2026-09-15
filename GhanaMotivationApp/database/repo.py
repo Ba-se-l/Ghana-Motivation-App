@@ -1,4 +1,5 @@
 from typing import TypeVar, Generic, Sequence, Any
+from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -113,7 +114,7 @@ class BaseRepository(Generic[_O]):
         """
         if hasattr(orm_model, 'updated_at'):
             if 'updated_at' not in update_data:
-                update_data['updated_at'] = func.now()
+                update_data['updated_at'] = datetime.now(timezone.utc)
 
         for key, value in update_data.items():
             setattr(orm_model, key, value)

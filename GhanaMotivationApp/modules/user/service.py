@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 
 from GhanaMotivationApp.core import hash_password, verify_password, InvalidCredentialsException
+from GhanaMotivationApp.modules.subscription.repo import SubscriptionRepository
 from .model import User
 from .schema import ChangePasswordRequest, UserStatusResponse, UserResponse
 from .repo import UserRepository
@@ -49,20 +50,26 @@ def _calculate_trial_remaining_seconds(trial_end: datetime) -> int:
         Remaining seconds as a non-negative integer. Returns 0 if expired.
     """
     now = datetime.now(timezone.utc)
+    if trial_end.tzinfo is None:
+        trial_end = trial_end.replace(tzinfo=timezone.utc)
     delta = trial_end - now
     remaining = int(delta.total_seconds())
     return max(remaining, 0)
 
 
-async def _reconcile_premium_status(user: User, user_repo: UserRepository) -> User:
+async def _reconcile_premium_status(
+    user: User, user_repo: UserRepository, session: AsyncSession
+) -> User:
     """Auto-deactivates premium if premium_expires has passed.
 
-    This is the server-authoritative reconciliation mechanism. If is_premium
-    is True but premium_expires < now(), the server corrects the state.
+    Reconciles BOTH User.is_premium AND Subscription.status to maintain
+    a single source of truth. This prevents state drift between the
+    two tables.
 
     Args:
         user: The User ORM instance to check.
-        user_repo: The repository for persisting changes.
+        user_repo: The repository for persisting User changes.
+        session: The active database session for Subscription operations.
 
     Returns:
         The (potentially updated) User ORM instance.
@@ -74,12 +81,20 @@ async def _reconcile_premium_status(user: User, user_repo: UserRepository) -> Us
         return user
 
     now = datetime.now(timezone.utc)
-    if user.premium_expires < now:
-        # Premium has expired — deactivate
+    premium_expires = user.premium_expires
+    if premium_expires.tzinfo is None:
+        premium_expires = premium_expires.replace(tzinfo=timezone.utc)
+
+    if premium_expires < now:
+        # Premium has expired — deactivate both User and Subscription
         user = await user_repo.update(
             orm_model=user,
             update_data={'is_premium': False}
         )
+
+        # Also expire the subscription record
+        sub_repo = SubscriptionRepository(session=session)
+        await sub_repo.deactivate_all_for_user(user_id=user.id)
 
     return user
 
@@ -201,7 +216,7 @@ async def get_user_status(user_id: int, session: AsyncSession) -> UserStatusResp
     user = await _get_user(user_id=user_id, session=session)
 
     # Step 2: Reconcile premium status
-    user = await _reconcile_premium_status(user=user, user_repo=user_repo)
+    user = await _reconcile_premium_status(user=user, user_repo=user_repo, session=session)
 
     # Step 3: Calcualte dynamic fields
     trial_remaining = _calculate_trial_remaining_seconds(trial_end=user.trial_end)

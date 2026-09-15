@@ -5,6 +5,7 @@ exception handlers, and includes the master router for all domain APIs.
 Also manages the database schema creation on startup.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -16,6 +17,13 @@ from GhanaMotivationApp.settings import settings
 from GhanaMotivationApp.database import async_engine, create_all_tables
 from GhanaMotivationApp.core import AppException
 from GhanaMotivationApp.modules import api_router
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -51,7 +59,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=settings.ALLOWED_ORIGINS, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,7 +88,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
     Prevents leaking internal stack traces to the client in production.
     """
-    # In a real app, log the stack trace here.
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
     return JSONResponse(
         status_code=500,
         content={
