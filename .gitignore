@@ -10,5 +10,5 @@ wheels/
 .venv
 docs
 .env
-.vescode
+.vscode
 pyrightconfig.json
