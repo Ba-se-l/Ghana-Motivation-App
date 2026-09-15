@@ -11,6 +11,7 @@ class Settings(Base):
         env_file_encoding='utf-8'
     )
 
+    # ———————————————— Server + Database Settings ————————————————
 
     HOST: str = "127.0.0.1"
     """The IP address or host interface to bind the Uvicorn ASGI server to."""
@@ -38,22 +39,26 @@ class Settings(Base):
     POOL_SIZE: int = 10
     POOL_TIMEOUT: int = 30
     MAX_OVERFLOW: int = 20
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ————————————————————————————————————————————————————
+    
 
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ———————————————— Session Settings ————————————————
+    
     # AsyncSessionSettings
     AUTO_FLUSH: bool = False
     """Controls `SQLAlchemy` session autoflush behavior"""
 
     EXPIRE_ON_COMMIT: bool = False
     """Whether to expire all instance after commit"""
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ————————————————————————————————————————————————————
+    
 
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ JWT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    # ———————————————— JWT Settings ————————————————
     # JWT Authentacation
     SECRET_KEY: str = "secret-key-in-production-time-in-this-place"
     """Secret key used for signing `JWT` tokens"""
@@ -69,27 +74,30 @@ class Settings(Base):
 
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     """Refresh token expiry duration in days. Long-lived, revocable."""
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ————————————————————————————————————————————————————
+    
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Paystack â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ———————————————— Paystack Settings ————————————————
     PAYSTACK_SECRET_KEY: str = "YOUR_PAYSTACK_SECRET_KEY_HERE"
     PAYSTACK_PUBLIC_KEY: str = "YOUR_PAYSTACK_PUBLIC_KEY_HERE"
     PAYSTACK_BASE_URL: str = "https://api.paystack.co"
     PAYSTACK_MODE: str = "mock"  # "mock" or "live"
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ————————————————————————————————————————————————————
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Business Rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ———————————————— Busines Rules ————————————————
+
     TRIAL_DAYS: int = 3
     SUBSCRIPTION_DAYS: int = 30
     SUBSCRIPTION_AMOUNT_PESEWAS: int = 1000  # 10 GHS in pesewas
     SUBSCRIPTION_CURRENCY: CurrencyEnum = CurrencyEnum.GHANA
     """Expected Paystack transaction currency code."""
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ————————————————————————————————————————————————————
+
 
     
-    # â”€â”€ CORS â”€â”€
+
     ALLOWED_ORIGINS: list[str] = ["*"]
 
 
