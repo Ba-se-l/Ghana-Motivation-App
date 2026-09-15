@@ -12,7 +12,6 @@ class Settings(Base):
     )
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     HOST: str = "127.0.0.1"
     """The IP address or host interface to bind the Uvicorn ASGI server to."""
 
@@ -24,13 +23,11 @@ class Settings(Base):
 
     ENVIRONMENT: EnvironmentEnum = EnvironmentEnum.DEVELOPMENT
     """Application runtime environment. Controls secret validation strictness."""
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
     API_PREFIX: str = '/api/v1'
 
 
-    # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     DATABASE_URL: str = "sqlite+aiosqlite:///./database_name.db"
     """The async database connection URL"""
 
